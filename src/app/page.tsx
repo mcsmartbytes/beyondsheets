@@ -132,19 +132,22 @@ export default function HomePage() {
             <p style={{ color: '#fca5a5', marginTop: 12 }}>{uploadError}</p>
           )}
           {uploadResult && (
-            <pre
-              style={{
-                marginTop: 12,
-                whiteSpace: 'pre-wrap',
-                background: '#0f172a',
-                padding: 12,
-                borderRadius: 8,
-                color: '#e2e8f0',
-                fontSize: 12,
-              }}
-            >
-              {JSON.stringify(uploadResult, null, 2)}
-            </pre>
+            <details style={{ marginTop: 12 }}>
+              <summary style={{ cursor: 'pointer', color: '#9ca3af' }}>Show raw response</summary>
+              <pre
+                style={{
+                  marginTop: 12,
+                  whiteSpace: 'pre-wrap',
+                  background: '#0f172a',
+                  padding: 12,
+                  borderRadius: 8,
+                  color: '#e2e8f0',
+                  fontSize: 12,
+                }}
+              >
+                {JSON.stringify(uploadResult, null, 2)}
+              </pre>
+            </details>
           )}
           {uploadReportUrl && (
             <p style={{ marginTop: 12 }}>

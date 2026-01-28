@@ -68,23 +68,50 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
               Rows: {sheet.rowCount} · Columns: {sheet.colCount}
             </p>
             {sheet.sampleRows.length > 0 && (
-              <pre
-                style={{
-                  marginTop: 12,
-                  whiteSpace: 'pre-wrap',
-                  background: '#0f172a',
-                  padding: 12,
-                  borderRadius: 8,
-                  color: '#e2e8f0',
-                  fontSize: 12,
-                }}
-              >
-                {JSON.stringify(sheet.sampleRows, null, 2)}
-              </pre>
+              <div style={{ overflowX: 'auto', marginTop: 12 }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                  <tbody>
+                    {sheet.sampleRows.map((row, rowIndex) => (
+                      <tr key={`${sheet.name}-row-${rowIndex}`}>
+                        {row.map((cell, cellIndex) => (
+                          <td
+                            key={`${sheet.name}-cell-${rowIndex}-${cellIndex}`}
+                            style={{
+                              borderBottom: '1px solid #1f2937',
+                              padding: '6px 8px',
+                              color: rowIndex === 0 ? '#e2e8f0' : '#cbd5f5',
+                              fontWeight: rowIndex === 0 ? 600 : 400,
+                            }}
+                          >
+                            {cell === null || cell === undefined || cell === '' ? '-' : String(cell)}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
         ))}
       </section>
+
+      <details style={{ marginTop: 24 }}>
+        <summary style={{ cursor: 'pointer', color: '#9ca3af' }}>Show raw report JSON</summary>
+        <pre
+          style={{
+            marginTop: 12,
+            whiteSpace: 'pre-wrap',
+            background: '#0f172a',
+            padding: 12,
+            borderRadius: 8,
+            color: '#e2e8f0',
+            fontSize: 12,
+          }}
+        >
+          {JSON.stringify(report, null, 2)}
+        </pre>
+      </details>
     </main>
   );
 }
