@@ -30,8 +30,9 @@ async function loadReport(id: string): Promise<ReportData | null> {
   }
 }
 
-export default async function ReportPage({ params }: { params: { id: string } }) {
-  const report = await loadReport(params.id);
+export default async function ReportPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const report = await loadReport(id);
 
   if (!report) {
     return (
