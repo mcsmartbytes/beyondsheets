@@ -28,6 +28,10 @@ export type AnalysisSummary = {
     riskyFormulas: number;
     topRisks: Array<{ type: string; count: number }>;
   };
+  sheetIssues: Array<{
+    sheet: string;
+    issues: Array<{ title: string; impact: string; fix: string }>;
+  }>;
   healthScore: {
     overall: number;
     structural: number;

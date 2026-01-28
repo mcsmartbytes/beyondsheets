@@ -19,6 +19,10 @@ type ReportData = {
       riskyFormulas: number;
       topRisks: Array<{ type: string; count: number }>;
     };
+    sheetIssues: Array<{
+      sheet: string;
+      issues: Array<{ title: string; impact: string; fix: string }>;
+    }>;
     healthScore: {
       overall: number;
       structural: number;
@@ -138,6 +142,26 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
               <li key={item}>{item}</li>
             ))}
           </ul>
+        </section>
+      )}
+
+      {report.analysis && report.analysis.sheetIssues.length > 0 && (
+        <section style={{ marginTop: 24, padding: 16, borderRadius: 12, background: '#111827' }}>
+          <h2 style={{ marginTop: 0 }}>Sheet-Level Findings</h2>
+          <div style={{ display: 'grid', gap: 12 }}>
+            {report.analysis.sheetIssues.map((sheet) => (
+              <div key={sheet.sheet} style={{ padding: 12, borderRadius: 10, background: '#0f172a' }}>
+                <strong>{sheet.sheet}</strong>
+                <ul style={{ color: '#cbd5f5', paddingLeft: 20, marginTop: 8 }}>
+                  {sheet.issues.map((issue) => (
+                    <li key={`${sheet.sheet}-${issue.title}`}>
+                      {issue.title}: {issue.fix}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
         </section>
       )}
 

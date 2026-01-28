@@ -17,6 +17,10 @@ export type AnalysisSummary = {
     riskyFormulas: number;
     topRisks: Array<{ type: string; count: number }>;
   };
+  sheetIssues: Array<{
+    sheet: string;
+    issues: Array<{ title: string; impact: string; fix: string }>;
+  }>;
   healthScore: HealthScore;
   notes: string[];
   issues: Array<{ title: string; impact: string; fix: string }>;
@@ -51,6 +55,10 @@ export function analyzeSpreadsheet(parsed: ParsedSpreadsheet): AnalysisSummary {
   const notes: string[] = [];
   const issues: Array<{ title: string; impact: string; fix: string }> = [];
   const dbPrep: string[] = [];
+  const sheetIssues: Array<{
+    sheet: string;
+    issues: Array<{ title: string; impact: string; fix: string }>;
+  }> = [];
 
   const totalFormulas = parsed.sheets.reduce(
     (sum, sheet) => sum + (sheet.formulaStats?.totalFormulas || 0),
@@ -113,6 +121,59 @@ export function analyzeSpreadsheet(parsed: ParsedSpreadsheet): AnalysisSummary {
   dbPrep.push('Standardize dates, currency, and units before migration.');
   dbPrep.push('Remove merged cells and ensure every column has a header.');
 
+  parsed.sheets.forEach((sheet) => {
+    const sheetLevelIssues: Array<{ title: string; impact: string; fix: string }> = [];
+    const headerRow = sheet.sampleRows[0] ?? [];
+    const headerText = headerRow.map((cell) => String(cell ?? '').trim());
+
+    if (headerText.length === 0 || headerText.every((cell) => cell === '')) {
+      sheetLevelIssues.push({
+        title: 'Missing header row',
+        impact: 'Columns cannot be mapped consistently.',
+        fix: 'Add a header row with descriptive column names.',
+      });
+    }
+
+    const blankHeaders = headerText.filter((cell) => cell === '').length;
+    if (blankHeaders > 0) {
+      sheetLevelIssues.push({
+        title: 'Blank column headers',
+        impact: 'Unlabeled columns make data ambiguous.',
+        fix: 'Name all columns in the header row.',
+      });
+    }
+
+    const headerCounts = headerText.reduce<Record<string, number>>((acc, value) => {
+      if (!value) return acc;
+      acc[value] = (acc[value] || 0) + 1;
+      return acc;
+    }, {});
+    const duplicateHeaders = Object.entries(headerCounts)
+      .filter(([, count]) => count > 1)
+      .map(([name]) => name);
+    if (duplicateHeaders.length > 0) {
+      sheetLevelIssues.push({
+        title: 'Duplicate column headers',
+        impact: `Duplicate headers found: ${duplicateHeaders.join(', ')}`,
+        fix: 'Rename duplicate headers to make each column unique.',
+      });
+    }
+
+    const expectedColumns = headerText.length || sheet.colCount;
+    const inconsistentRows = sheet.sampleRows.slice(1).filter((row) => row.length !== expectedColumns).length;
+    if (inconsistentRows > 0) {
+      sheetLevelIssues.push({
+        title: 'Inconsistent row length',
+        impact: `${inconsistentRows} sample rows have a different column count.`,
+        fix: 'Align row lengths and remove stray separators or merged cells.',
+      });
+    }
+
+    if (sheetLevelIssues.length > 0) {
+      sheetIssues.push({ sheet: sheet.name, issues: sheetLevelIssues });
+    }
+  });
+
   return {
     purpose,
     formulaRisk: {
@@ -120,6 +181,7 @@ export function analyzeSpreadsheet(parsed: ParsedSpreadsheet): AnalysisSummary {
       riskyFormulas,
       topRisks,
     },
+    sheetIssues,
     healthScore: computeHealthScore(parsed),
     notes,
     issues,
