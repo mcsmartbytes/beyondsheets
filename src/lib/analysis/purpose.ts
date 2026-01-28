@@ -24,12 +24,18 @@ const PURPOSE_KEYWORDS: Record<string, string[]> = {
     'gross',
     'net',
     'paycheck',
+    'pay',
+    'withholding',
+    'benefits',
+    'pto',
+    'vacation',
+    'sick',
   ],
   Budget: ['budget', 'expense', 'actual', 'forecast', 'variance', 'capex', 'opex'],
   'Job Costing': ['job', 'project', 'estimate', 'labor', 'material', 'unit cost', 'markup'],
   Inventory: ['sku', 'stock', 'on hand', 'warehouse', 'inventory', 'item', 'qty', 'quantity'],
   CRM: ['customer', 'client', 'lead', 'pipeline', 'deal', 'opportunity', 'contact'],
-  Scheduling: ['dispatch', 'route', 'calendar', 'shift', 'crew', 'schedule'],
+  Scheduling: ['dispatch', 'route', 'calendar', 'shift', 'schedule'],
   'Sales Tracking': ['order', 'invoice', 'sales', 'revenue', 'price', 'total'],
 };
 
@@ -58,9 +64,10 @@ export function detectPurpose(sheetNames: string[], sampleRows: unknown[][][]): 
 
   for (const [label, keywords] of Object.entries(PURPOSE_KEYWORDS)) {
     const matches = keywords.filter((keyword) => tokens.has(keyword));
+    const weight = label === 'Payroll' ? 2 : 1;
     signals.push({
       label,
-      score: matches.length,
+      score: matches.length * weight,
       matches,
     });
   }
@@ -68,7 +75,12 @@ export function detectPurpose(sheetNames: string[], sampleRows: unknown[][][]): 
   signals.sort((a, b) => b.score - a.score);
 
   const primary = signals[0]?.score ? signals[0].label : 'General Spreadsheet';
-  const secondary = signals[1]?.score ? signals[1].label : null;
+  const secondary =
+    signals[1]?.score && signals[0]?.score
+      ? signals[1].score >= Math.max(2, signals[0].score * 0.6)
+        ? signals[1].label
+        : null
+      : null;
 
   return {
     primary,
