@@ -140,6 +140,13 @@ export default function HomePage() {
               {JSON.stringify(uploadResult, null, 2)}
             </pre>
           )}
+          {uploadResult?.data && typeof uploadResult.data === 'object' && 'reportUrl' in uploadResult.data && (
+            <p style={{ marginTop: 12 }}>
+              <a href={(uploadResult.data as { reportUrl: string }).reportUrl} style={{ color: '#60a5fa' }}>
+                View report →
+              </a>
+            </p>
+          )}
         </div>
 
         <div style={{ padding: 20, borderRadius: 12, background: '#111827' }}>

@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { parseSpreadsheet } from '@/lib/spreadsheet/parse';
 import { fingerprintBuffer } from '@/lib/spreadsheet/fingerprint';
+import fs from 'fs/promises';
+import path from 'path';
 
 export const runtime = 'nodejs';
 
@@ -34,14 +36,39 @@ export async function POST(request: Request) {
     const fingerprint = fingerprintBuffer(buffer);
     const parsed = await parseSpreadsheet(buffer, filename);
 
+    const storageDir = path.join(process.cwd(), 'data', 'uploads');
+    await fs.mkdir(storageDir, { recursive: true });
+
+    const fileBase = `${fingerprint}-${filename.replace(/[^a-z0-9._-]/gi, '_')}`;
+    const storedFilePath = path.join(storageDir, fileBase);
+    const reportPath = path.join(storageDir, `${fingerprint}.report.json`);
+
+    await fs.writeFile(storedFilePath, buffer);
+    await fs.writeFile(
+      reportPath,
+      JSON.stringify(
+        {
+          id: fingerprint,
+          filename,
+          size: buffer.length,
+          mimeType: file.type || null,
+          parsed,
+          createdAt: new Date().toISOString(),
+        },
+        null,
+        2,
+      ),
+    );
+
     return NextResponse.json({
       ok: true,
       data: {
-        fingerprint,
+        id: fingerprint,
         filename,
         size: buffer.length,
         mimeType: file.type || null,
         parsed,
+        reportUrl: `/report/${fingerprint}`,
       },
     });
   } catch (error) {
