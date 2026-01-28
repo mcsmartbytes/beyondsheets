@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { parseSpreadsheet } from '@/lib/spreadsheet/parse';
 import { fingerprintBuffer } from '@/lib/spreadsheet/fingerprint';
+import { analyzeSpreadsheet } from '@/lib/analysis/analyze';
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -35,6 +36,7 @@ export async function POST(request: Request) {
   try {
     const fingerprint = fingerprintBuffer(buffer);
     const parsed = await parseSpreadsheet(buffer, filename);
+    const analysis = analyzeSpreadsheet(parsed);
 
     const storageDir = path.join(process.cwd(), 'data', 'uploads');
     await fs.mkdir(storageDir, { recursive: true });
@@ -53,6 +55,7 @@ export async function POST(request: Request) {
           size: buffer.length,
           mimeType: file.type || null,
           parsed,
+          analysis,
           createdAt: new Date().toISOString(),
         },
         null,
@@ -68,6 +71,7 @@ export async function POST(request: Request) {
         size: buffer.length,
         mimeType: file.type || null,
         parsed,
+        analysis,
         reportUrl: `/report/${fingerprint}`,
       },
     });

@@ -8,6 +8,22 @@ type ReportData = {
   size: number;
   mimeType: string | null;
   createdAt: string;
+  analysis?: {
+    purpose: {
+      primary: string;
+      secondary: string | null;
+      signals: Array<{ label: string; score: number; matches: string[] }>;
+    };
+    healthScore: {
+      overall: number;
+      structural: number;
+      formulas: number;
+      integrity: number;
+      scalability: number;
+      busFactor: number;
+    };
+    notes: string[];
+  };
   parsed: {
     sheetNames: string[];
     sheets: Array<{
@@ -58,6 +74,26 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
         <p>Total sheets: {report.parsed.sheetNames.length}</p>
         <p>Hidden sheets: {report.parsed.sheets.filter((sheet) => sheet.hidden).length}</p>
       </section>
+
+      {report.analysis && (
+        <section style={{ marginTop: 24, padding: 16, borderRadius: 12, background: '#111827' }}>
+          <h2 style={{ marginTop: 0 }}>Analysis</h2>
+          <p>
+            Purpose: <strong>{report.analysis.purpose.primary}</strong>
+            {report.analysis.purpose.secondary ? ` · ${report.analysis.purpose.secondary}` : ''}
+          </p>
+          <p style={{ color: '#9ca3af' }}>
+            Health score: {report.analysis.healthScore.overall}/100
+          </p>
+          {report.analysis.notes.length > 0 && (
+            <ul style={{ color: '#cbd5f5', paddingLeft: 20 }}>
+              {report.analysis.notes.map((note) => (
+                <li key={note}>{note}</li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
 
       <section style={{ marginTop: 24, display: 'grid', gap: 16 }}>
         {report.parsed.sheets.map((sheet) => (
