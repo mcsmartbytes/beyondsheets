@@ -8,7 +8,7 @@ export const runtime = 'nodejs';
 
 const importSchema = z.object({
   spreadsheetId: z.string().min(1),
-  accessToken: z.string().min(1),
+  accessToken: z.string().optional(),
 });
 
 export async function POST(request: Request) {
@@ -17,13 +17,26 @@ export async function POST(request: Request) {
 
   if (!parsed.success) {
     return NextResponse.json(
-      { ok: false, error: 'spreadsheetId and accessToken are required.' },
+      { ok: false, error: 'spreadsheetId is required.' },
       { status: 400 },
     );
   }
 
   try {
-    const buffer = await fetchGoogleSheetAsXlsx(parsed.data);
+    const accessToken =
+      parsed.data.accessToken || process.env.GOOGLE_SHEETS_ACCESS_TOKEN;
+
+    if (!accessToken) {
+      return NextResponse.json(
+        { ok: false, error: 'Access token is required.' },
+        { status: 400 },
+      );
+    }
+
+    const buffer = await fetchGoogleSheetAsXlsx({
+      spreadsheetId: parsed.data.spreadsheetId,
+      accessToken,
+    });
     const fingerprint = fingerprintBuffer(buffer);
     const parsedSheets = await parseSpreadsheet(buffer, parsed.data.spreadsheetId + '.xlsx');
 

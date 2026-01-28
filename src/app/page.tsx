@@ -61,8 +61,8 @@ export default function HomePage() {
     setSheetError(null);
     setSheetResult(null);
 
-    if (!sheetId || !accessToken) {
-      setSheetError('Spreadsheet ID and access token are required.');
+    if (!sheetId) {
+      setSheetError('Spreadsheet ID is required.');
       return;
     }
 
@@ -73,7 +73,7 @@ export default function HomePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           spreadsheetId: sheetId,
-          accessToken: accessToken,
+          accessToken: accessToken || undefined,
         }),
       });
       const json = (await response.json()) as UploadResult;
@@ -160,7 +160,7 @@ export default function HomePage() {
             />
             <input
               type="text"
-              placeholder="Access token (OAuth)"
+              placeholder="Access token (optional if in .env.local)"
               value={accessToken}
               onChange={(event) => setAccessToken(event.target.value)}
               style={{
