@@ -10,6 +10,7 @@ type UploadResult = {
 
 export default function HomePage() {
   const [uploadResult, setUploadResult] = useState<UploadResult | null>(null);
+  const [uploadReportUrl, setUploadReportUrl] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadLoading, setUploadLoading] = useState(false);
 
@@ -23,6 +24,7 @@ export default function HomePage() {
     event.preventDefault();
     setUploadError(null);
     setUploadResult(null);
+    setUploadReportUrl(null);
 
     const form = event.currentTarget;
     const fileInput = form.elements.namedItem('file') as HTMLInputElement | null;
@@ -47,6 +49,10 @@ export default function HomePage() {
         setUploadError(json.error || 'Upload failed.');
       } else {
         setUploadResult(json);
+        if (json.data && typeof json.data === 'object' && 'reportUrl' in json.data) {
+          const reportUrl = (json.data as { reportUrl?: string }).reportUrl;
+          setUploadReportUrl(reportUrl ?? null);
+        }
       }
     } catch (error) {
       setUploadError('Upload failed.');
@@ -140,9 +146,9 @@ export default function HomePage() {
               {JSON.stringify(uploadResult, null, 2)}
             </pre>
           )}
-          {uploadResult?.data && typeof uploadResult.data === 'object' && 'reportUrl' in uploadResult.data && (
+          {uploadReportUrl && (
             <p style={{ marginTop: 12 }}>
-              <a href={(uploadResult.data as { reportUrl: string }).reportUrl} style={{ color: '#60a5fa' }}>
+              <a href={uploadReportUrl} style={{ color: '#60a5fa' }}>
                 View report →
               </a>
             </p>
