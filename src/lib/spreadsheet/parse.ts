@@ -3,6 +3,87 @@ import type { ParsedSheetSummary, ParsedSpreadsheet } from './types';
 
 const SAMPLE_ROW_LIMIT = 20;
 const SAMPLE_COL_LIMIT = 10;
+const FORMULA_EXAMPLE_LIMIT = 6;
+
+const VOLATILE_FUNCTIONS = ['NOW', 'TODAY', 'RAND', 'RANDBETWEEN', 'OFFSET', 'INDIRECT'];
+
+function analyzeFormulaRisks(sheet: XLSX.WorkSheet) {
+  const rangeRef = sheet['!ref'];
+  if (!rangeRef) {
+    return {
+      totalFormulas: 0,
+      riskyFormulas: 0,
+      risks: [],
+      examples: [],
+    };
+  }
+
+  const range = XLSX.utils.decode_range(rangeRef);
+  const riskCounts: Record<string, number> = {};
+  const examples: Array<{ address: string; formula: string; reason: string }> = [];
+
+  let totalFormulas = 0;
+  let riskyFormulas = 0;
+
+  for (let r = range.s.r; r <= range.e.r; r += 1) {
+    for (let c = range.s.c; c <= range.e.c; c += 1) {
+      const address = XLSX.utils.encode_cell({ r, c });
+      const cell = sheet[address] as XLSX.CellObject | undefined;
+      const formula = cell?.f;
+      if (!formula) continue;
+
+      totalFormulas += 1;
+      const formulaText = String(formula);
+      const reasons: string[] = [];
+
+      if (/#REF!/i.test(formulaText)) {
+        reasons.push('Broken reference (#REF!)');
+        riskCounts['Broken reference'] = (riskCounts['Broken reference'] || 0) + 1;
+      }
+
+      const volatileMatch = VOLATILE_FUNCTIONS.find((fn) =>
+        new RegExp(`\\b${fn}\\b`, 'i').test(formulaText),
+      );
+      if (volatileMatch) {
+        reasons.push(`Volatile function (${volatileMatch})`);
+        riskCounts['Volatile function'] = (riskCounts['Volatile function'] || 0) + 1;
+      }
+
+      if (/[^\w](\d+(\.\d+)?)/.test(formulaText)) {
+        reasons.push('Hardcoded number');
+        riskCounts['Hardcoded number'] = (riskCounts['Hardcoded number'] || 0) + 1;
+      }
+
+      const nestedDepth = (formulaText.match(/\(/g) || []).length;
+      if (nestedDepth > 6) {
+        reasons.push('Over-nested formula');
+        riskCounts['Over-nested formula'] = (riskCounts['Over-nested formula'] || 0) + 1;
+      }
+
+      if (reasons.length) {
+        riskyFormulas += 1;
+        if (examples.length < FORMULA_EXAMPLE_LIMIT) {
+          examples.push({
+            address,
+            formula: formulaText,
+            reason: reasons.join('; '),
+          });
+        }
+      }
+    }
+  }
+
+  const risks = Object.entries(riskCounts)
+    .map(([type, count]) => ({ type, count }))
+    .sort((a, b) => b.count - a.count);
+
+  return {
+    totalFormulas,
+    riskyFormulas,
+    risks,
+    examples,
+  };
+}
 
 function buildSheetSummary(
   name: string,
@@ -37,12 +118,15 @@ function buildSheetSummary(
     blankrows: false,
   }) as unknown[][];
 
+  const formulaStats = analyzeFormulaRisks(sheet);
+
   return {
     name,
     hidden,
     rowCount,
     colCount,
     sampleRows,
+    formulaStats,
   };
 }
 

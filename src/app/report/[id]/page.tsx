@@ -14,6 +14,11 @@ type ReportData = {
       secondary: string | null;
       signals: Array<{ label: string; score: number; matches: string[] }>;
     };
+    formulaRisk: {
+      totalFormulas: number;
+      riskyFormulas: number;
+      topRisks: Array<{ type: string; count: number }>;
+    };
     healthScore: {
       overall: number;
       structural: number;
@@ -23,6 +28,8 @@ type ReportData = {
       busFactor: number;
     };
     notes: string[];
+    issues: Array<{ title: string; impact: string; fix: string }>;
+    dbPrep: string[];
   };
   parsed: {
     sheetNames: string[];
@@ -85,6 +92,19 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
           <p style={{ color: '#9ca3af' }}>
             Health score: {report.analysis.healthScore.overall}/100
           </p>
+          <p style={{ color: '#9ca3af' }}>
+            Formula risk: {report.analysis.formulaRisk.riskyFormulas}/
+            {report.analysis.formulaRisk.totalFormulas} formulas flagged
+          </p>
+          {report.analysis.formulaRisk.topRisks.length > 0 && (
+            <ul style={{ color: '#cbd5f5', paddingLeft: 20 }}>
+              {report.analysis.formulaRisk.topRisks.map((risk) => (
+                <li key={risk.type}>
+                  {risk.type}: {risk.count}
+                </li>
+              ))}
+            </ul>
+          )}
           {report.analysis.notes.length > 0 && (
             <ul style={{ color: '#cbd5f5', paddingLeft: 20 }}>
               {report.analysis.notes.map((note) => (
@@ -92,6 +112,32 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
               ))}
             </ul>
           )}
+        </section>
+      )}
+
+      {report.analysis && report.analysis.issues.length > 0 && (
+        <section style={{ marginTop: 24, padding: 16, borderRadius: 12, background: '#111827' }}>
+          <h2 style={{ marginTop: 0 }}>Issues & Fixes</h2>
+          <div style={{ display: 'grid', gap: 12 }}>
+            {report.analysis.issues.map((issue) => (
+              <div key={issue.title} style={{ padding: 12, borderRadius: 10, background: '#0f172a' }}>
+                <strong>{issue.title}</strong>
+                <p style={{ color: '#9ca3af', marginTop: 6 }}>{issue.impact}</p>
+                <p style={{ color: '#cbd5f5', marginTop: 6 }}>Fix: {issue.fix}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {report.analysis && report.analysis.dbPrep.length > 0 && (
+        <section style={{ marginTop: 24, padding: 16, borderRadius: 12, background: '#111827' }}>
+          <h2 style={{ marginTop: 0 }}>Database Prep</h2>
+          <ul style={{ color: '#cbd5f5', paddingLeft: 20 }}>
+            {report.analysis.dbPrep.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
         </section>
       )}
 
@@ -103,6 +149,12 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
             <p style={{ marginTop: 8, color: '#9ca3af' }}>
               Rows: {sheet.rowCount} · Columns: {sheet.colCount}
             </p>
+            {sheet.formulaStats && sheet.formulaStats.totalFormulas > 0 && (
+              <p style={{ color: '#9ca3af' }}>
+                Formulas: {sheet.formulaStats.totalFormulas} · Risky:{' '}
+                {sheet.formulaStats.riskyFormulas}
+              </p>
+            )}
             {sheet.sampleRows.length > 0 && (
               <div style={{ overflowX: 'auto', marginTop: 12 }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>

@@ -4,6 +4,12 @@ export type ParsedSheetSummary = {
   rowCount: number;
   colCount: number;
   sampleRows: unknown[][];
+  formulaStats?: {
+    totalFormulas: number;
+    riskyFormulas: number;
+    risks: Array<{ type: string; count: number }>;
+    examples: Array<{ address: string; formula: string; reason: string }>;
+  };
 };
 
 export type ParsedSpreadsheet = {
@@ -17,6 +23,11 @@ export type AnalysisSummary = {
     secondary: string | null;
     signals: Array<{ label: string; score: number; matches: string[] }>;
   };
+  formulaRisk: {
+    totalFormulas: number;
+    riskyFormulas: number;
+    topRisks: Array<{ type: string; count: number }>;
+  };
   healthScore: {
     overall: number;
     structural: number;
@@ -26,6 +37,8 @@ export type AnalysisSummary = {
     busFactor: number;
   };
   notes: string[];
+  issues: Array<{ title: string; impact: string; fix: string }>;
+  dbPrep: string[];
 };
 
 export type UploadAnalysisResult = {
