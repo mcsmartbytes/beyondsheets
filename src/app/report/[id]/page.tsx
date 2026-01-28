@@ -93,6 +93,20 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
             Purpose: <strong>{report.analysis.purpose.primary}</strong>
             {report.analysis.purpose.secondary ? ` · ${report.analysis.purpose.secondary}` : ''}
           </p>
+          {report.analysis.purpose.signals.some((signal) => signal.score > 0) && (
+            <details style={{ marginTop: 8 }}>
+              <summary style={{ cursor: 'pointer', color: '#9ca3af' }}>Purpose signals</summary>
+              <ul style={{ color: '#cbd5f5', paddingLeft: 20, marginTop: 8 }}>
+                {report.analysis.purpose.signals
+                  .filter((signal) => signal.score > 0)
+                  .map((signal) => (
+                    <li key={signal.label}>
+                      {signal.label}: {signal.matches.join(', ')}
+                    </li>
+                  ))}
+              </ul>
+            </details>
+          )}
           <p style={{ color: '#9ca3af' }}>
             Health score: {report.analysis.healthScore.overall}/100
           </p>

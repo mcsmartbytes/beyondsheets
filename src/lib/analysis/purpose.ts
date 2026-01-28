@@ -11,11 +11,25 @@ export type PurposeSummary = {
 };
 
 const PURPOSE_KEYWORDS: Record<string, string[]> = {
+  Payroll: [
+    'payroll',
+    'employee',
+    'wages',
+    'hours',
+    'overtime',
+    'pay rate',
+    'salary',
+    'deductions',
+    'taxes',
+    'gross',
+    'net',
+    'paycheck',
+  ],
   Budget: ['budget', 'expense', 'actual', 'forecast', 'variance', 'capex', 'opex'],
   'Job Costing': ['job', 'project', 'estimate', 'labor', 'material', 'unit cost', 'markup'],
   Inventory: ['sku', 'stock', 'on hand', 'warehouse', 'inventory', 'item', 'qty', 'quantity'],
   CRM: ['customer', 'client', 'lead', 'pipeline', 'deal', 'opportunity', 'contact'],
-  Scheduling: ['date', 'time', 'dispatch', 'route', 'calendar', 'shift', 'crew'],
+  Scheduling: ['dispatch', 'route', 'calendar', 'shift', 'crew', 'schedule'],
   'Sales Tracking': ['order', 'invoice', 'sales', 'revenue', 'price', 'total'],
 };
 
@@ -24,18 +38,23 @@ function normalizeToken(value: unknown): string {
   return String(value).trim().toLowerCase();
 }
 
-function extractHeaderTokens(sampleRows: unknown[][]): string[] {
+function tokenizeCell(value: unknown): string[] {
+  const normalized = normalizeToken(value);
+  if (!normalized) return [];
+  return normalized.split(/[^a-z0-9]+/).filter(Boolean);
+}
+
+function extractRowTokens(sampleRows: unknown[][], rowCount = 3): string[] {
   if (!sampleRows.length) return [];
-  const header = sampleRows[0] ?? [];
-  return header.flatMap((cell) => normalizeToken(cell)).filter(Boolean);
+  return sampleRows.slice(0, rowCount).flatMap((row) => row.flatMap((cell) => tokenizeCell(cell)));
 }
 
 export function detectPurpose(sheetNames: string[], sampleRows: unknown[][][]): PurposeSummary {
   const signals: PurposeSignal[] = [];
 
   const tokens = new Set<string>();
-  sheetNames.forEach((name) => tokens.add(normalizeToken(name)));
-  sampleRows.forEach((rows) => extractHeaderTokens(rows).forEach((token) => tokens.add(token)));
+  sheetNames.forEach((name) => tokenizeCell(name).forEach((token) => tokens.add(token)));
+  sampleRows.forEach((rows) => extractRowTokens(rows).forEach((token) => tokens.add(token)));
 
   for (const [label, keywords] of Object.entries(PURPOSE_KEYWORDS)) {
     const matches = keywords.filter((keyword) => tokens.has(keyword));
