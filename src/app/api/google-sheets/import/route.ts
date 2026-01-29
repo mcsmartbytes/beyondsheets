@@ -118,8 +118,8 @@ export async function POST(request: Request) {
           filename,
           size: buffer.length,
           mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          parsed: parsedSheets,
-          analysis,
+          parsed: JSON.parse(JSON.stringify(parsedSheets)), // Convert to plain JSON
+          analysis: JSON.parse(JSON.stringify(analysis)), // Convert to plain JSON
           source: 'google_sheets',
         },
         create: {
@@ -127,8 +127,8 @@ export async function POST(request: Request) {
           filename,
           size: buffer.length,
           mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          parsed: parsedSheets,
-          analysis,
+          parsed: JSON.parse(JSON.stringify(parsedSheets)), // Convert to plain JSON
+          analysis: JSON.parse(JSON.stringify(analysis)), // Convert to plain JSON
           source: 'google_sheets',
         },
       });
