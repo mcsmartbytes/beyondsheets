@@ -66,6 +66,7 @@ export default function HomePage() {
     event.preventDefault();
     setSheetError(null);
     setSheetResult(null);
+    setSheetReportUrl(null);
 
     if (!sheetId) {
       setSheetError('Spreadsheet ID is required.');
@@ -87,6 +88,10 @@ export default function HomePage() {
         setSheetError(json.error || 'Import failed.');
       } else {
         setSheetResult(json);
+        if (json.data && typeof json.data === 'object' && 'reportUrl' in json.data) {
+          const reportUrl = (json.data as { reportUrl?: string }).reportUrl;
+          setSheetReportUrl(reportUrl ?? null);
+        }
       }
     } catch (error) {
       setSheetError('Import failed.');
@@ -206,19 +211,29 @@ export default function HomePage() {
             <p style={{ color: '#fca5a5', marginTop: 12 }}>{sheetError}</p>
           )}
           {sheetResult && (
-            <pre
-              style={{
-                marginTop: 12,
-                whiteSpace: 'pre-wrap',
-                background: '#0f172a',
-                padding: 12,
-                borderRadius: 8,
-                color: '#e2e8f0',
-                fontSize: 12,
-              }}
-            >
-              {JSON.stringify(sheetResult, null, 2)}
-            </pre>
+            <details style={{ marginTop: 12 }}>
+              <summary style={{ cursor: 'pointer', color: '#9ca3af' }}>Show raw response</summary>
+              <pre
+                style={{
+                  marginTop: 12,
+                  whiteSpace: 'pre-wrap',
+                  background: '#0f172a',
+                  padding: 12,
+                  borderRadius: 8,
+                  color: '#e2e8f0',
+                  fontSize: 12,
+                }}
+              >
+                {JSON.stringify(sheetResult, null, 2)}
+              </pre>
+            </details>
+          )}
+          {sheetReportUrl && (
+            <p style={{ marginTop: 12 }}>
+              <a href={sheetReportUrl} style={{ color: '#60a5fa' }}>
+                View report →
+              </a>
+            </p>
           )}
         </div>
       </section>
