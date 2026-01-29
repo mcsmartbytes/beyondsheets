@@ -1,0 +1,46 @@
+// BeyondSheets Database Schema
+// Stores spreadsheet analysis reports and metadata
+
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Main report entity - stores spreadsheet analysis
+model Report {
+  id          String   @id // SHA256 fingerprint of file
+  filename    String
+  size        Int      // File size in bytes
+  mimeType    String?
+  
+  // Analysis results
+  parsed      Json     // ParsedSpreadsheet data
+  analysis    Json     // AnalysisSummary data
+  
+  // Metadata
+  source      String   @default("upload") // "upload" or "google_sheets"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Future: user ownership
+  // userId      String?
+  // user        User?    @relation(fields: [userId], references: [id])
+  
+  @@index([createdAt])
+  @@index([filename])
+}
+
+// Future: User model for authentication
+// model User {
+//   id        String   @id @default(cuid())
+//   email     String   @unique
+//   name      String?
+//   reports   Report[]
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+// }

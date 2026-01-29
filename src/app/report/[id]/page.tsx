@@ -1,6 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import Link from 'next/link';
+import { prisma } from '@/lib/db';
 
 type ReportData = {
   id: string;
@@ -54,6 +55,28 @@ type ReportData = {
 };
 
 async function loadReport(id: string): Promise<ReportData | null> {
+  // Try loading from database first
+  try {
+    const report = await prisma.report.findUnique({
+      where: { id },
+    });
+    
+    if (report) {
+      return {
+        id: report.id,
+        filename: report.filename,
+        size: report.size,
+        mimeType: report.mimeType,
+        createdAt: report.createdAt.toISOString(),
+        parsed: report.parsed as ReportData['parsed'],
+        analysis: report.analysis as ReportData['analysis'],
+      };
+    }
+  } catch (dbError) {
+    console.error('[Report] Database load failed, falling back to file system:', dbError);
+  }
+  
+  // Fallback to file system for backward compatibility
   const reportPath = path.join(process.cwd(), 'data', 'uploads', `${id}.report.json`);
   try {
     const raw = await fs.readFile(reportPath, 'utf8');

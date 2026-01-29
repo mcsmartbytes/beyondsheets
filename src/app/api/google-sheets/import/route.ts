@@ -4,6 +4,7 @@ import { fetchGoogleSheetAsXlsx } from '@/lib/google-sheets/client';
 import { parseSpreadsheet } from '@/lib/spreadsheet/parse';
 import { fingerprintBuffer } from '@/lib/spreadsheet/fingerprint';
 import { analyzeSpreadsheet } from '@/lib/analysis/analyze';
+import { prisma } from '@/lib/db';
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -88,6 +89,7 @@ export async function POST(request: Request) {
     const storedFilePath = path.join(storageDir, fileBase);
     const reportPath = path.join(storageDir, `${fingerprint}.report.json`);
 
+    // Save file to disk (for now, will phase out later)
     await fs.writeFile(storedFilePath, buffer);
     await fs.writeFile(
       reportPath,
@@ -106,7 +108,35 @@ export async function POST(request: Request) {
       ),
     );
 
-    console.log(`[Google Sheets] Report saved: ${reportPath}`);
+    console.log(`[Google Sheets] File saved: ${reportPath}`);
+
+    // Save to database
+    try {
+      await prisma.report.upsert({
+        where: { id: fingerprint },
+        update: {
+          filename,
+          size: buffer.length,
+          mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          parsed: parsedSheets,
+          analysis,
+          source: 'google_sheets',
+        },
+        create: {
+          id: fingerprint,
+          filename,
+          size: buffer.length,
+          mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          parsed: parsedSheets,
+          analysis,
+          source: 'google_sheets',
+        },
+      });
+      console.log(`[Google Sheets] Report saved to database: ${fingerprint}`);
+    } catch (dbError) {
+      console.error('[Google Sheets] Database save failed:', dbError);
+      // Continue without database - backward compatibility
+    }
 
     return NextResponse.json({
       ok: true,

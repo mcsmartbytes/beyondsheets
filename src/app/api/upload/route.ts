@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { parseSpreadsheet } from '@/lib/spreadsheet/parse';
 import { fingerprintBuffer } from '@/lib/spreadsheet/fingerprint';
 import { analyzeSpreadsheet } from '@/lib/analysis/analyze';
+import { prisma } from '@/lib/db';
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -83,6 +84,7 @@ export async function POST(request: Request) {
     const storedFilePath = path.join(storageDir, fileBase);
     const reportPath = path.join(storageDir, `${fingerprint}.report.json`);
 
+    // Save file to disk (for now, will phase out later)
     await fs.writeFile(storedFilePath, buffer);
     await fs.writeFile(
       reportPath,
@@ -101,7 +103,35 @@ export async function POST(request: Request) {
       ),
     );
 
-    console.log(`[Upload] Report saved: ${reportPath}`);
+    console.log(`[Upload] File saved: ${reportPath}`);
+
+    // Save to database
+    try {
+      await prisma.report.upsert({
+        where: { id: fingerprint },
+        update: {
+          filename,
+          size: buffer.length,
+          mimeType: file.type || null,
+          parsed,
+          analysis,
+          source: 'upload',
+        },
+        create: {
+          id: fingerprint,
+          filename,
+          size: buffer.length,
+          mimeType: file.type || null,
+          parsed,
+          analysis,
+          source: 'upload',
+        },
+      });
+      console.log(`[Upload] Report saved to database: ${fingerprint}`);
+    } catch (dbError) {
+      console.error('[Upload] Database save failed:', dbError);
+      // Continue without database - backward compatibility
+    }
 
     return NextResponse.json({
       ok: true,
