@@ -113,8 +113,8 @@ export async function POST(request: Request) {
           filename,
           size: buffer.length,
           mimeType: file.type || null,
-          parsed,
-          analysis,
+          parsed: JSON.parse(JSON.stringify(parsed)), // Convert to plain JSON
+          analysis: JSON.parse(JSON.stringify(analysis)), // Convert to plain JSON
           source: 'upload',
         },
         create: {
@@ -122,8 +122,8 @@ export async function POST(request: Request) {
           filename,
           size: buffer.length,
           mimeType: file.type || null,
-          parsed,
-          analysis,
+          parsed: JSON.parse(JSON.stringify(parsed)), // Convert to plain JSON
+          analysis: JSON.parse(JSON.stringify(analysis)), // Convert to plain JSON
           source: 'upload',
         },
       });
