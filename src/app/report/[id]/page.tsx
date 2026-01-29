@@ -43,6 +43,12 @@ type ReportData = {
       rowCount: number;
       colCount: number;
       sampleRows: unknown[][];
+      formulaStats?: {
+        totalFormulas: number;
+        riskyFormulas: number;
+        risks: Array<{ type: string; count: number }>;
+        examples: Array<{ address: string; formula: string; reason: string }>;
+      };
     }>;
   };
 };

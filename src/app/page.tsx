@@ -17,6 +17,7 @@ export default function HomePage() {
   const [sheetId, setSheetId] = useState('');
   const [accessToken, setAccessToken] = useState('');
   const [sheetResult, setSheetResult] = useState<UploadResult | null>(null);
+  const [sheetReportUrl, setSheetReportUrl] = useState<string | null>(null);
   const [sheetError, setSheetError] = useState<string | null>(null);
   const [sheetLoading, setSheetLoading] = useState(false);
 
