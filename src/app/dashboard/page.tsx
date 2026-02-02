@@ -192,26 +192,26 @@ export default function DashboardPage() {
   };
 
   return (
-    <main className="min-h-screen py-12 px-6">
+    <main className="min-h-screen py-8 px-4">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-3">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold mb-2">
             <span className="text-gradient">Analyze</span> Your Spreadsheet
           </h1>
-          <p className="text-[var(--color-text-secondary)] text-lg max-w-2xl mx-auto">
+          <p className="text-[var(--color-text-secondary)] text-base max-w-xl mx-auto">
             Upload your Excel or CSV file to get instant insights into health scores, 
             formula risks, and modernization recommendations.
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-8">
+        <div className="grid lg:grid-cols-2 gap-5">
           {/* Upload Section */}
           <section>
-            <div className="card p-6">
-              <h2 className="text-xl font-semibold mb-6 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
-                  <FileIcon className="w-5 h-5 text-white" />
+            <div className="card p-4">
+              <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                <div className="w-6 h-6 rounded bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                  <FileIcon className="w-3 h-3 text-white" />
                 </div>
                 Upload File
               </h2>
@@ -234,28 +234,28 @@ export default function DashboardPage() {
                     />
                     
                     {selectedFile ? (
-                      <div className="space-y-3">
-                        <div className="w-16 h-16 mx-auto rounded-2xl bg-[var(--color-bg-tertiary)] flex items-center justify-center">
-                          <FileIcon className="w-8 h-8 text-blue-400" />
+                      <div className="space-y-1.5">
+                        <div className="w-8 h-8 mx-auto rounded-lg bg-[var(--color-bg-tertiary)] flex items-center justify-center">
+                          <FileIcon className="w-4 h-4 text-blue-400" />
                         </div>
                         <div>
-                          <p className="font-semibold text-[var(--color-text-primary)]">{selectedFile.name}</p>
-                          <p className="text-sm text-[var(--color-text-muted)]">
+                          <p className="font-medium text-xs text-[var(--color-text-primary)]">{selectedFile.name}</p>
+                          <p className="text-[10px] text-[var(--color-text-muted)]">
                             {(selectedFile.size / 1024).toFixed(1)} KB
                           </p>
                         </div>
                       </div>
                     ) : (
-                      <div className="space-y-3">
-                        <div className="w-16 h-16 mx-auto rounded-2xl bg-[var(--color-bg-tertiary)] flex items-center justify-center">
-                          <UploadIcon className="w-8 h-8 text-[var(--color-text-muted)]" />
+                      <div className="space-y-1.5">
+                        <div className="w-8 h-8 mx-auto rounded-lg bg-[var(--color-bg-tertiary)] flex items-center justify-center">
+                          <UploadIcon className="w-4 h-4 text-[var(--color-text-muted)]" />
                         </div>
                         <div>
-                          <p className="font-semibold text-[var(--color-text-primary)]">
-                            Drop your file here or <span className="text-blue-400">browse</span>
+                          <p className="font-medium text-xs text-[var(--color-text-primary)]">
+                            Drop file or <span className="text-blue-400">browse</span>
                           </p>
-                          <p className="text-sm text-[var(--color-text-muted)] mt-1">
-                            Supports .xlsx, .xls, and .csv files up to 10MB
+                          <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">
+                            .xlsx, .xls, .csv up to 10MB
                           </p>
                         </div>
                       </div>
@@ -263,13 +263,13 @@ export default function DashboardPage() {
                   </div>
 
                   {uploadError && (
-                    <div className="mt-4 p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+                    <div className="mt-3 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs">
                       {uploadError}
                     </div>
                   )}
 
                   {selectedFile && (
-                    <div className="mt-6 flex gap-3">
+                    <div className="mt-4 flex gap-2">
                       <button
                         onClick={handleUpload}
                         disabled={uploadLoading}
@@ -295,34 +295,34 @@ export default function DashboardPage() {
                   )}
                 </>
               ) : (
-                <div className="space-y-6">
-                  <div className="flex items-start gap-4 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-                    <CheckCircleIcon className="w-6 h-6 text-emerald-400 flex-shrink-0 mt-0.5" />
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                    <CheckCircleIcon className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-semibold text-emerald-400">Analysis Complete!</p>
-                      <p className="text-sm text-[var(--color-text-secondary)] mt-1">
+                      <p className="font-semibold text-sm text-emerald-400">Analysis Complete!</p>
+                      <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">
                         {uploadResult.data?.filename || selectedFile?.name}
                       </p>
                     </div>
                   </div>
 
                   {uploadResult.data?.healthScore !== undefined && (
-                    <div className="flex items-center justify-between p-4 rounded-xl bg-[var(--color-bg-tertiary)]">
-                      <span className="text-[var(--color-text-secondary)]">Health Score</span>
-                      <span className={`text-2xl font-bold ${getScoreColor(uploadResult.data.healthScore)}`}>
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-[var(--color-bg-tertiary)]">
+                      <span className="text-sm text-[var(--color-text-secondary)]">Health Score</span>
+                      <span className={`text-xl font-bold ${getScoreColor(uploadResult.data.healthScore)}`}>
                         {uploadResult.data.healthScore}/100
                       </span>
                     </div>
                   )}
 
                   {uploadResult.data?.purpose && (
-                    <div className="flex items-center justify-between p-4 rounded-xl bg-[var(--color-bg-tertiary)]">
-                      <span className="text-[var(--color-text-secondary)]">Detected Purpose</span>
-                      <span className="font-semibold capitalize">{uploadResult.data.purpose}</span>
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-[var(--color-bg-tertiary)]">
+                      <span className="text-sm text-[var(--color-text-secondary)]">Detected Purpose</span>
+                      <span className="font-medium text-sm capitalize">{uploadResult.data.purpose}</span>
                     </div>
                   )}
 
-                  <div className="flex gap-3">
+                  <div className="flex gap-2">
                     {uploadResult.data?.reportUrl && (
                       <Link href={uploadResult.data.reportUrl} className="btn btn-primary flex-1">
                         View Full Report →
@@ -339,18 +339,18 @@ export default function DashboardPage() {
 
           {/* Google Sheets Section */}
           <section>
-            <div className="card p-6">
-              <h2 className="text-xl font-semibold mb-6 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center">
-                  <GoogleIcon className="w-5 h-5" />
+            <div className="card p-4">
+              <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                <div className="w-6 h-6 rounded bg-white flex items-center justify-center">
+                  <GoogleIcon className="w-3 h-3" />
                 </div>
-                Import from Google Sheets
+                Google Sheets
               </h2>
 
               {!sheetResult ? (
-                <form onSubmit={handleGoogleSheetsImport} className="space-y-4">
+                <form onSubmit={handleGoogleSheetsImport} className="space-y-3">
                   <div>
-                    <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
+                    <label className="block text-xs font-medium text-[var(--color-text-secondary)] mb-1.5">
                       Spreadsheet ID
                     </label>
                     <input
@@ -358,15 +358,15 @@ export default function DashboardPage() {
                       placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms"
                       value={sheetId}
                       onChange={(e) => setSheetId(e.target.value)}
-                      className="input"
+                      className="input text-sm py-2"
                     />
-                    <p className="mt-2 text-xs text-[var(--color-text-muted)]">
+                    <p className="mt-1 text-xs text-[var(--color-text-muted)]">
                       Find this in your Google Sheets URL after /d/
                     </p>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
+                    <label className="block text-xs font-medium text-[var(--color-text-secondary)] mb-1.5">
                       Access Token <span className="text-[var(--color-text-muted)]">(optional)</span>
                     </label>
                     <input
@@ -374,12 +374,12 @@ export default function DashboardPage() {
                       placeholder="Uses .env.local token if not provided"
                       value={accessToken}
                       onChange={(e) => setAccessToken(e.target.value)}
-                      className="input"
+                      className="input text-sm py-2"
                     />
                   </div>
 
                   {sheetError && (
-                    <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+                    <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs">
                       {sheetError}
                     </div>
                   )}
@@ -400,27 +400,27 @@ export default function DashboardPage() {
                   </button>
                 </form>
               ) : (
-                <div className="space-y-6">
-                  <div className="flex items-start gap-4 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-                    <CheckCircleIcon className="w-6 h-6 text-emerald-400 flex-shrink-0 mt-0.5" />
+                <div className="space-y-3">
+                  <div className="flex items-start gap-2 p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                    <CheckCircleIcon className="w-4 h-4 text-emerald-400 flex-shrink-0" />
                     <div>
-                      <p className="font-semibold text-emerald-400">Import Complete!</p>
-                      <p className="text-sm text-[var(--color-text-secondary)] mt-1">
+                      <p className="font-semibold text-xs text-emerald-400">Import Complete!</p>
+                      <p className="text-[10px] text-[var(--color-text-secondary)]">
                         {sheetResult.data?.filename || 'Google Sheet'}
                       </p>
                     </div>
                   </div>
 
                   {sheetResult.data?.healthScore !== undefined && (
-                    <div className="flex items-center justify-between p-4 rounded-xl bg-[var(--color-bg-tertiary)]">
-                      <span className="text-[var(--color-text-secondary)]">Health Score</span>
-                      <span className={`text-2xl font-bold ${getScoreColor(sheetResult.data.healthScore)}`}>
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-[var(--color-bg-tertiary)]">
+                      <span className="text-sm text-[var(--color-text-secondary)]">Health Score</span>
+                      <span className={`text-xl font-bold ${getScoreColor(sheetResult.data.healthScore)}`}>
                         {sheetResult.data.healthScore}/100
                       </span>
                     </div>
                   )}
 
-                  <div className="flex gap-3">
+                  <div className="flex gap-2">
                     {sheetResult.data?.reportUrl && (
                       <Link href={sheetResult.data.reportUrl} className="btn btn-primary flex-1">
                         View Full Report →
@@ -444,42 +444,42 @@ export default function DashboardPage() {
         </div>
 
         {/* Features Grid */}
-        <section className="mt-16">
-          <h2 className="text-2xl font-bold text-center mb-8">What You&apos;ll Get</h2>
-          <div className="grid md:grid-cols-3 gap-6">
+        <section className="mt-10">
+          <h2 className="text-xl font-bold text-center mb-5">What You&apos;ll Get</h2>
+          <div className="grid md:grid-cols-3 gap-3">
             <div className="stat-card text-center">
-              <div className="w-12 h-12 mx-auto rounded-xl bg-blue-500/10 flex items-center justify-center mb-4">
-                <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-7 h-7 mx-auto rounded bg-blue-500/10 flex items-center justify-center mb-2">
+                <svg className="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
               </div>
-              <h3 className="font-semibold mb-2">Health Score</h3>
-              <p className="text-sm text-[var(--color-text-secondary)]">
-                Multi-factor analysis across structure, formulas, integrity, scalability, and bus factor.
+              <h3 className="font-semibold text-xs mb-0.5">Health Score</h3>
+              <p className="text-[10px] text-[var(--color-text-secondary)]">
+                Multi-factor analysis
               </p>
             </div>
 
             <div className="stat-card text-center">
-              <div className="w-12 h-12 mx-auto rounded-xl bg-red-500/10 flex items-center justify-center mb-4">
-                <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-7 h-7 mx-auto rounded bg-red-500/10 flex items-center justify-center mb-2">
+                <svg className="w-3.5 h-3.5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
               </div>
-              <h3 className="font-semibold mb-2">Risk Detection</h3>
-              <p className="text-sm text-[var(--color-text-secondary)]">
-                Identify volatile functions, broken references, and over-nested formulas.
+              <h3 className="font-semibold text-xs mb-0.5">Risk Detection</h3>
+              <p className="text-[10px] text-[var(--color-text-secondary)]">
+                Find broken references
               </p>
             </div>
 
             <div className="stat-card text-center">
-              <div className="w-12 h-12 mx-auto rounded-xl bg-purple-500/10 flex items-center justify-center mb-4">
-                <svg className="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-7 h-7 mx-auto rounded bg-purple-500/10 flex items-center justify-center mb-2">
+                <svg className="w-3.5 h-3.5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
                 </svg>
               </div>
-              <h3 className="font-semibold mb-2">Migration Plan</h3>
-              <p className="text-sm text-[var(--color-text-secondary)]">
-                Step-by-step guidance for moving your data into a proper database.
+              <h3 className="font-semibold text-xs mb-0.5">Migration Plan</h3>
+              <p className="text-[10px] text-[var(--color-text-secondary)]">
+                Database guidance
               </p>
             </div>
           </div>

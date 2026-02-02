@@ -91,20 +91,20 @@
   .card {
     background: var(--color-bg-secondary);
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     transition: all var(--transition-base);
   }
   
   .card:hover {
     border-color: var(--color-border-hover);
-    box-shadow: var(--shadow-lg);
+    box-shadow: var(--shadow-md);
   }
 
   .card-elevated {
     background: var(--color-bg-elevated);
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-md);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
   }
 
   /* Button variants */
@@ -253,8 +253,8 @@
   .dropzone {
     position: relative;
     border: 2px dashed var(--color-border);
-    border-radius: var(--radius-xl);
-    padding: 48px 32px;
+    border-radius: var(--radius-lg);
+    padding: 28px 20px;
     text-align: center;
     transition: all var(--transition-base);
     cursor: pointer;
@@ -314,23 +314,23 @@
 
   /* Stat card */
   .stat-card {
-    padding: 20px 24px;
+    padding: 14px 16px;
     background: var(--color-bg-secondary);
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
   }
 
   .stat-label {
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     color: var(--color-text-muted);
-    margin-bottom: 8px;
+    margin-bottom: 4px;
   }
 
   .stat-value {
-    font-size: 28px;
+    font-size: 22px;
     font-weight: 700;
     color: var(--color-text-primary);
   }
@@ -370,9 +370,9 @@
 
   /* Issue card */
   .issue-card {
-    padding: 16px 20px;
+    padding: 12px 14px;
     background: var(--color-bg-tertiary);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-sm);
     border-left: 3px solid var(--color-accent-warning);
   }
 
