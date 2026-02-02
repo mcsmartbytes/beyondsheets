@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "set NEXT_TURBOPACK=0 && next dev",
     "build": "prisma generate && next build",
     "build:local": "echo Build may fail on Windows due to Turbopack+Prisma issue. Deploy to Vercel instead!",
     "start": "next start",

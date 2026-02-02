@@ -55,7 +55,6 @@ type ReportData = {
 };
 
 async function loadReport(id: string): Promise<ReportData | null> {
-  // Try loading from database first
   try {
     const report = await prisma.report.findUnique({
       where: { id },
@@ -76,7 +75,6 @@ async function loadReport(id: string): Promise<ReportData | null> {
     console.error('[Report] Database load failed, falling back to file system:', dbError);
   }
   
-  // Fallback to file system for backward compatibility
   const reportPath = path.join(process.cwd(), 'data', 'uploads', `${id}.report.json`);
   try {
     const raw = await fs.readFile(reportPath, 'utf8');
@@ -86,187 +84,486 @@ async function loadReport(id: string): Promise<ReportData | null> {
   }
 }
 
+function getScoreGrade(score: number): { label: string; color: string; bgColor: string; gradient: string } {
+  if (score >= 80) return { 
+    label: 'Excellent', 
+    color: 'text-emerald-400', 
+    bgColor: 'bg-emerald-500/10',
+    gradient: 'from-emerald-500 to-teal-500'
+  };
+  if (score >= 60) return { 
+    label: 'Good', 
+    color: 'text-blue-400', 
+    bgColor: 'bg-blue-500/10',
+    gradient: 'from-blue-500 to-cyan-500'
+  };
+  if (score >= 40) return { 
+    label: 'Fair', 
+    color: 'text-amber-400', 
+    bgColor: 'bg-amber-500/10',
+    gradient: 'from-amber-500 to-orange-500'
+  };
+  return { 
+    label: 'Critical', 
+    color: 'text-red-400', 
+    bgColor: 'bg-red-500/10',
+    gradient: 'from-red-500 to-rose-500'
+  };
+}
+
+function HealthGauge({ score, size = 'large' }: { score: number; size?: 'large' | 'small' }) {
+  const grade = getScoreGrade(score);
+  const radius = size === 'large' ? 80 : 36;
+  const strokeWidth = size === 'large' ? 12 : 6;
+  const circumference = 2 * Math.PI * radius;
+  const progress = (score / 100) * circumference;
+  const dimensions = size === 'large' ? 200 : 90;
+  
+  const getStrokeColor = () => {
+    if (score >= 80) return '#10b981';
+    if (score >= 60) return '#3b82f6';
+    if (score >= 40) return '#f59e0b';
+    return '#ef4444';
+  };
+
+  return (
+    <div className="relative" style={{ width: dimensions, height: dimensions }}>
+      <svg className="transform -rotate-90" width={dimensions} height={dimensions}>
+        <circle
+          cx={dimensions / 2}
+          cy={dimensions / 2}
+          r={radius}
+          fill="none"
+          stroke="var(--color-bg-tertiary)"
+          strokeWidth={strokeWidth}
+        />
+        <circle
+          cx={dimensions / 2}
+          cy={dimensions / 2}
+          r={radius}
+          fill="none"
+          stroke={getStrokeColor()}
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={circumference - progress}
+          className="transition-all duration-1000 ease-out"
+          style={{
+            filter: `drop-shadow(0 0 8px ${getStrokeColor()}40)`,
+          }}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        {size === 'large' ? (
+          <>
+            <span className={`text-5xl font-bold ${grade.color}`}>{score}</span>
+            <span className="text-sm text-[var(--color-text-muted)] mt-1">out of 100</span>
+          </>
+        ) : (
+          <span className={`text-lg font-bold ${grade.color}`}>{score}</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ScoreBar({ label, score, weight }: { label: string; score: number; weight: string }) {
+  const grade = getScoreGrade(score);
+  
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between text-sm">
+        <span className="text-[var(--color-text-secondary)]">{label}</span>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-[var(--color-text-muted)]">{weight}</span>
+          <span className={`font-semibold ${grade.color}`}>{score}</span>
+        </div>
+      </div>
+      <div className="progress-bar">
+        <div
+          className={`progress-bar-fill bg-gradient-to-r ${grade.gradient}`}
+          style={{ width: `${score}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function StatCard({ label, value, subtext, icon }: { label: string; value: string | number; subtext?: string; icon: React.ReactNode }) {
+  return (
+    <div className="stat-card">
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="stat-label">{label}</p>
+          <p className="stat-value">{value}</p>
+          {subtext && <p className="text-sm text-[var(--color-text-muted)] mt-1">{subtext}</p>}
+        </div>
+        <div className="w-10 h-10 rounded-lg bg-[var(--color-bg-tertiary)] flex items-center justify-center text-[var(--color-text-muted)]">
+          {icon}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function IssueCard({ title, impact, fix, severity = 'warning' }: { title: string; impact: string; fix: string; severity?: 'critical' | 'warning' | 'info' }) {
+  const severityClass = severity === 'critical' ? 'issue-card-critical' : severity === 'info' ? 'issue-card-info' : 'issue-card';
+  
+  return (
+    <div className={severityClass}>
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1">
+          <h4 className="font-semibold text-[var(--color-text-primary)]">{title}</h4>
+          <p className="text-sm text-[var(--color-text-secondary)] mt-1">{impact}</p>
+        </div>
+      </div>
+      <div className="mt-3 pt-3 border-t border-[var(--color-border)]">
+        <p className="text-sm">
+          <span className="text-[var(--color-text-muted)]">Fix: </span>
+          <span className="text-[var(--color-text-primary)]">{fix}</span>
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default async function ReportPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const report = await loadReport(id);
 
   if (!report) {
     return (
-      <main style={{ maxWidth: 960, margin: '0 auto', padding: '64px 24px' }}>
-        <h1>Report not found</h1>
-        <p>We could not find a report for that ID.</p>
-        <Link href="/">Back to upload</Link>
+      <main className="min-h-screen py-12 px-6">
+        <div className="max-w-4xl mx-auto text-center">
+          <div className="w-20 h-20 mx-auto rounded-2xl bg-[var(--color-bg-secondary)] flex items-center justify-center mb-6">
+            <svg className="w-10 h-10 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h1 className="text-3xl font-bold mb-3">Report Not Found</h1>
+          <p className="text-[var(--color-text-secondary)] mb-8">
+            We couldn&apos;t find a report with that ID. It may have been deleted or never existed.
+          </p>
+          <Link href="/dashboard" className="btn btn-primary">
+            ← Back to Dashboard
+          </Link>
+        </div>
       </main>
     );
   }
 
+  const grade = report.analysis ? getScoreGrade(report.analysis.healthScore.overall) : null;
+  const totalRows = report.parsed.sheets.reduce((sum, sheet) => sum + sheet.rowCount, 0);
+  const hiddenSheets = report.parsed.sheets.filter(s => s.hidden).length;
+
   return (
-    <main style={{ maxWidth: 960, margin: '0 auto', padding: '64px 24px' }}>
-      <Link href="/">← Back</Link>
-      <h1 style={{ marginTop: 16 }}>Report</h1>
-      <p style={{ color: '#9ca3af' }}>
-        {report.filename} · {(report.size / 1024).toFixed(1)} KB ·{' '}
-        {new Date(report.createdAt).toLocaleString()}
-      </p>
+    <main className="min-h-screen py-12 px-6">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <Link href="/dashboard" className="inline-flex items-center gap-2 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition mb-4">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back to Dashboard
+          </Link>
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold">{report.filename}</h1>
+              <p className="text-[var(--color-text-secondary)] mt-1">
+                {(report.size / 1024).toFixed(1)} KB • Analyzed {new Date(report.createdAt).toLocaleDateString('en-US', { 
+                  month: 'short', 
+                  day: 'numeric', 
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
+              </p>
+            </div>
+            {report.analysis?.purpose && (
+              <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full ${grade?.bgColor} ${grade?.color} font-medium`}>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                <span className="capitalize">{report.analysis.purpose.primary}</span>
+              </div>
+            )}
+          </div>
+        </div>
 
-      <section style={{ marginTop: 24, padding: 16, borderRadius: 12, background: '#111827' }}>
-        <h2 style={{ marginTop: 0 }}>Summary</h2>
-        <p>Total sheets: {report.parsed.sheetNames.length}</p>
-        <p>Hidden sheets: {report.parsed.sheets.filter((sheet) => sheet.hidden).length}</p>
-      </section>
+        {/* Health Score Section */}
+        {report.analysis && (
+          <section className="card p-8 mb-8">
+            <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
+              {/* Main Gauge */}
+              <div className="flex flex-col items-center">
+                <HealthGauge score={report.analysis.healthScore.overall} />
+                <div className={`mt-4 px-4 py-1.5 rounded-full ${grade?.bgColor}`}>
+                  <span className={`font-semibold ${grade?.color}`}>{grade?.label}</span>
+                </div>
+              </div>
 
-      {report.analysis && (
-        <section style={{ marginTop: 24, padding: 16, borderRadius: 12, background: '#111827' }}>
-          <h2 style={{ marginTop: 0 }}>Analysis</h2>
-          <p>
-            Purpose: <strong>{report.analysis.purpose.primary}</strong>
-            {report.analysis.purpose.secondary ? ` · ${report.analysis.purpose.secondary}` : ''}
-          </p>
-          {report.analysis.purpose.signals.some((signal) => signal.score > 0) && (
-            <details style={{ marginTop: 8 }}>
-              <summary style={{ cursor: 'pointer', color: '#9ca3af' }}>Purpose signals</summary>
-              <ul style={{ color: '#cbd5f5', paddingLeft: 20, marginTop: 8 }}>
-                {report.analysis.purpose.signals
-                  .filter((signal) => signal.score > 0)
-                  .map((signal) => (
-                    <li key={signal.label}>
-                      {signal.label}: {signal.matches.join(', ')}
+              {/* Score Breakdown */}
+              <div className="flex-1 space-y-4">
+                <h3 className="text-lg font-semibold mb-4">Score Breakdown</h3>
+                <ScoreBar label="Structural Health" score={report.analysis.healthScore.structural} weight="20%" />
+                <ScoreBar label="Formula Safety" score={report.analysis.healthScore.formulas} weight="25%" />
+                <ScoreBar label="Data Integrity" score={report.analysis.healthScore.integrity} weight="25%" />
+                <ScoreBar label="Scalability" score={report.analysis.healthScore.scalability} weight="15%" />
+                <ScoreBar label="Bus Factor" score={report.analysis.healthScore.busFactor} weight="15%" />
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Quick Stats */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <StatCard
+            label="Total Sheets"
+            value={report.parsed.sheetNames.length}
+            subtext={hiddenSheets > 0 ? `${hiddenSheets} hidden` : undefined}
+            icon={
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7" />
+              </svg>
+            }
+          />
+          <StatCard
+            label="Total Rows"
+            value={totalRows.toLocaleString()}
+            icon={
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+              </svg>
+            }
+          />
+          {report.analysis && (
+            <>
+              <StatCard
+                label="Formulas"
+                value={report.analysis.formulaRisk.totalFormulas}
+                subtext={report.analysis.formulaRisk.riskyFormulas > 0 ? `${report.analysis.formulaRisk.riskyFormulas} risky` : 'None risky'}
+                icon={
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                  </svg>
+                }
+              />
+              <StatCard
+                label="Issues Found"
+                value={report.analysis.issues.length}
+                icon={
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                }
+              />
+            </>
+          )}
+        </div>
+
+        <div className="grid lg:grid-cols-3 gap-8">
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* Issues & Recommendations */}
+            {report.analysis && report.analysis.issues.length > 0 && (
+              <section className="card p-6">
+                <h2 className="text-xl font-semibold mb-4 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                    <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                  </div>
+                  Issues & Recommendations
+                </h2>
+                <div className="space-y-3">
+                  {report.analysis.issues.map((issue, idx) => (
+                    <IssueCard
+                      key={`issue-${idx}`}
+                      title={issue.title}
+                      impact={issue.impact}
+                      fix={issue.fix}
+                      severity={idx === 0 ? 'critical' : 'warning'}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Formula Risks */}
+            {report.analysis && report.analysis.formulaRisk.topRisks.length > 0 && (
+              <section className="card p-6">
+                <h2 className="text-xl font-semibold mb-4 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center">
+                    <svg className="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                  </div>
+                  Formula Risks
+                </h2>
+                <div className="space-y-3">
+                  {report.analysis.formulaRisk.topRisks.map((risk) => (
+                    <div key={risk.type} className="flex items-center justify-between p-4 rounded-lg bg-[var(--color-bg-tertiary)]">
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-red-400" />
+                        <span className="font-medium capitalize">{risk.type.replace(/_/g, ' ')}</span>
+                      </div>
+                      <span className="text-[var(--color-text-muted)]">{risk.count} occurrence{risk.count !== 1 ? 's' : ''}</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Database Prep */}
+            {report.analysis && report.analysis.dbPrep.length > 0 && (
+              <section className="card p-6">
+                <h2 className="text-xl font-semibold mb-4 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                    <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+                    </svg>
+                  </div>
+                  Database Migration Steps
+                </h2>
+                <ol className="space-y-3">
+                  {report.analysis.dbPrep.map((step, idx) => (
+                    <li key={`step-${idx}`} className="flex items-start gap-3">
+                      <span className="flex-shrink-0 w-6 h-6 rounded-full bg-purple-500/20 text-purple-400 text-sm font-semibold flex items-center justify-center">
+                        {idx + 1}
+                      </span>
+                      <span className="text-[var(--color-text-secondary)] pt-0.5">{step}</span>
                     </li>
                   ))}
-              </ul>
-            </details>
-          )}
-          <p style={{ color: '#9ca3af' }}>
-            Health score: {report.analysis.healthScore.overall}/100
-          </p>
-          <p style={{ color: '#9ca3af' }}>
-            Formula risk: {report.analysis.formulaRisk.riskyFormulas}/
-            {report.analysis.formulaRisk.totalFormulas} formulas flagged
-          </p>
-          {report.analysis.formulaRisk.topRisks.length > 0 && (
-            <ul style={{ color: '#cbd5f5', paddingLeft: 20 }}>
-              {report.analysis.formulaRisk.topRisks.map((risk) => (
-                <li key={risk.type}>
-                  {risk.type}: {risk.count}
-                </li>
-              ))}
-            </ul>
-          )}
-          {report.analysis.notes.length > 0 && (
-            <ul style={{ color: '#cbd5f5', paddingLeft: 20 }}>
-              {report.analysis.notes.map((note) => (
-                <li key={note}>{note}</li>
-              ))}
-            </ul>
-          )}
-        </section>
-      )}
-
-      {report.analysis && report.analysis.issues.length > 0 && (
-        <section style={{ marginTop: 24, padding: 16, borderRadius: 12, background: '#111827' }}>
-          <h2 style={{ marginTop: 0 }}>Issues & Fixes</h2>
-          <div style={{ display: 'grid', gap: 12 }}>
-            {report.analysis.issues.map((issue) => (
-              <div key={issue.title} style={{ padding: 12, borderRadius: 10, background: '#0f172a' }}>
-                <strong>{issue.title}</strong>
-                <p style={{ color: '#9ca3af', marginTop: 6 }}>{issue.impact}</p>
-                <p style={{ color: '#cbd5f5', marginTop: 6 }}>Fix: {issue.fix}</p>
-              </div>
-            ))}
+                </ol>
+              </section>
+            )}
           </div>
-        </section>
-      )}
 
-      {report.analysis && report.analysis.dbPrep.length > 0 && (
-        <section style={{ marginTop: 24, padding: 16, borderRadius: 12, background: '#111827' }}>
-          <h2 style={{ marginTop: 0 }}>Database Prep</h2>
-          <ul style={{ color: '#cbd5f5', paddingLeft: 20 }}>
-            {report.analysis.dbPrep.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-        </section>
-      )}
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Sheet Overview */}
+            <section className="card p-6">
+              <h3 className="font-semibold mb-4">Sheet Overview</h3>
+              <div className="space-y-3">
+                {report.parsed.sheets.map((sheet) => (
+                  <div key={sheet.name} className="p-3 rounded-lg bg-[var(--color-bg-tertiary)]">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-medium text-sm truncate">{sheet.name}</span>
+                      {sheet.hidden && (
+                        <span className="text-xs px-2 py-0.5 rounded bg-amber-500/20 text-amber-400">Hidden</span>
+                      )}
+                    </div>
+                    <div className="text-xs text-[var(--color-text-muted)]">
+                      {sheet.rowCount} rows • {sheet.colCount} cols
+                      {sheet.formulaStats && sheet.formulaStats.totalFormulas > 0 && (
+                        <> • {sheet.formulaStats.totalFormulas} formulas</>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
 
-      {report.analysis && report.analysis.sheetIssues.length > 0 && (
-        <section style={{ marginTop: 24, padding: 16, borderRadius: 12, background: '#111827' }}>
-          <h2 style={{ marginTop: 0 }}>Sheet-Level Findings</h2>
-          <div style={{ display: 'grid', gap: 12 }}>
-            {report.analysis.sheetIssues.map((sheet) => (
-              <div key={sheet.sheet} style={{ padding: 12, borderRadius: 10, background: '#0f172a' }}>
-                <strong>{sheet.sheet}</strong>
-                <ul style={{ color: '#cbd5f5', paddingLeft: 20, marginTop: 8 }}>
-                  {sheet.issues.map((issue) => (
-                    <li key={`${sheet.sheet}-${issue.title}`}>
-                      {issue.title}: {issue.fix}
+            {/* Purpose Signals */}
+            {report.analysis && report.analysis.purpose.signals.some(s => s.score > 0) && (
+              <section className="card p-6">
+                <h3 className="font-semibold mb-4">Purpose Signals</h3>
+                <div className="space-y-2">
+                  {report.analysis.purpose.signals
+                    .filter(s => s.score > 0)
+                    .sort((a, b) => b.score - a.score)
+                    .map((signal) => (
+                      <div key={signal.label} className="flex items-center justify-between text-sm">
+                        <span className="text-[var(--color-text-secondary)]">{signal.label}</span>
+                        <span className="font-medium">{signal.score}</span>
+                      </div>
+                    ))}
+                </div>
+              </section>
+            )}
+
+            {/* Notes */}
+            {report.analysis && report.analysis.notes.length > 0 && (
+              <section className="card p-6">
+                <h3 className="font-semibold mb-4">Additional Notes</h3>
+                <ul className="space-y-2">
+                  {report.analysis.notes.map((note, idx) => (
+                    <li key={`note-${idx}`} className="text-sm text-[var(--color-text-secondary)] flex items-start gap-2">
+                      <span className="text-[var(--color-text-muted)]">•</span>
+                      {note}
                     </li>
                   ))}
                 </ul>
+              </section>
+            )}
+          </div>
+        </div>
+
+        {/* Data Preview */}
+        <section className="mt-8 card p-6">
+          <h2 className="text-xl font-semibold mb-6">Data Preview</h2>
+          <div className="space-y-6">
+            {report.parsed.sheets.slice(0, 3).map((sheet) => (
+              <div key={sheet.name}>
+                <h3 className="font-medium text-[var(--color-text-secondary)] mb-3 flex items-center gap-2">
+                  {sheet.name}
+                  {sheet.hidden && (
+                    <span className="text-xs px-2 py-0.5 rounded bg-amber-500/20 text-amber-400">Hidden</span>
+                  )}
+                </h3>
+                {sheet.sampleRows.length > 0 ? (
+                  <div className="overflow-x-auto rounded-lg border border-[var(--color-border)]">
+                    <table className="data-table">
+                      <thead>
+                        <tr>
+                          {sheet.sampleRows[0]?.map((cell, idx) => (
+                            <th key={`header-${idx}`}>
+                              {cell === null || cell === undefined || cell === '' 
+                                ? `Col ${idx + 1}` 
+                                : String(cell)}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {sheet.sampleRows.slice(1, 6).map((row, rowIdx) => (
+                          <tr key={`row-${rowIdx}`}>
+                            {row.map((cell, cellIdx) => (
+                              <td key={`cell-${rowIdx}-${cellIdx}`}>
+                                {cell === null || cell === undefined || cell === '' 
+                                  ? <span className="text-[var(--color-text-muted)]">—</span>
+                                  : String(cell)}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="text-sm text-[var(--color-text-muted)]">No data preview available</p>
+                )}
               </div>
             ))}
-          </div>
-        </section>
-      )}
-
-      <section style={{ marginTop: 24, display: 'grid', gap: 16 }}>
-        {report.parsed.sheets.map((sheet) => (
-          <div key={sheet.name} style={{ padding: 16, borderRadius: 12, background: '#111827' }}>
-            <strong>{sheet.name}</strong>
-            {sheet.hidden && <span style={{ marginLeft: 8, color: '#fbbf24' }}>(hidden)</span>}
-            <p style={{ marginTop: 8, color: '#9ca3af' }}>
-              Rows: {sheet.rowCount} · Columns: {sheet.colCount}
-            </p>
-            {sheet.formulaStats && sheet.formulaStats.totalFormulas > 0 && (
-              <p style={{ color: '#9ca3af' }}>
-                Formulas: {sheet.formulaStats.totalFormulas} · Risky:{' '}
-                {sheet.formulaStats.riskyFormulas}
+            {report.parsed.sheets.length > 3 && (
+              <p className="text-sm text-[var(--color-text-muted)] text-center">
+                + {report.parsed.sheets.length - 3} more sheet{report.parsed.sheets.length - 3 !== 1 ? 's' : ''}
               </p>
             )}
-            {sheet.sampleRows.length > 0 && (
-              <div style={{ overflowX: 'auto', marginTop: 12 }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
-                  <tbody>
-                    {sheet.sampleRows.map((row, rowIndex) => (
-                      <tr key={`${sheet.name}-row-${rowIndex}`}>
-                        {row.map((cell, cellIndex) => (
-                          <td
-                            key={`${sheet.name}-cell-${rowIndex}-${cellIndex}`}
-                            style={{
-                              borderBottom: '1px solid #1f2937',
-                              padding: '6px 8px',
-                              color: rowIndex === 0 ? '#e2e8f0' : '#cbd5f5',
-                              fontWeight: rowIndex === 0 ? 600 : 400,
-                            }}
-                          >
-                            {cell === null || cell === undefined || cell === '' ? '-' : String(cell)}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
           </div>
-        ))}
-      </section>
+        </section>
 
-      <details style={{ marginTop: 24 }}>
-        <summary style={{ cursor: 'pointer', color: '#9ca3af' }}>Show raw report JSON</summary>
-        <pre
-          style={{
-            marginTop: 12,
-            whiteSpace: 'pre-wrap',
-            background: '#0f172a',
-            padding: 12,
-            borderRadius: 8,
-            color: '#e2e8f0',
-            fontSize: 12,
-          }}
-        >
-          {JSON.stringify(report, null, 2)}
-        </pre>
-      </details>
+        {/* Raw JSON Toggle */}
+        <details className="mt-8">
+          <summary className="cursor-pointer text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition">
+            Show raw report JSON
+          </summary>
+          <pre className="mt-4 p-6 rounded-lg bg-[var(--color-bg-secondary)] border border-[var(--color-border)] overflow-x-auto text-xs font-mono text-[var(--color-text-secondary)]">
+            {JSON.stringify(report, null, 2)}
+          </pre>
+        </details>
+      </div>
     </main>
   );
 }
